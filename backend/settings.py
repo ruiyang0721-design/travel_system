@@ -135,7 +135,7 @@ SIMPLEUI_CONFIG = {
     'system_keep': False,  # 不使用系统默认菜单，完全自定义
     'menus': [
         {
-            'name': '📊 数据看板',
+            'name': '数据看板',
             'url': '/admin/api/dashboardproxy/',
             'app': 'api',
             'model': 'dashboardproxy',
