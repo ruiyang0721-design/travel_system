@@ -137,6 +137,8 @@ SIMPLEUI_CONFIG = {
         {
             'name': '📊 数据看板',
             'url': '/admin/api/dashboardproxy/',
+            'app': 'api',
+            'model': 'dashboardproxy',
         },
         {
             'name': '景点列表',
