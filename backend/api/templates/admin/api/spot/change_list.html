@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    <a href="/admin/api/spot/dashboard/" class="addlink" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border-radius: 4px;">
+      📊 数据看板
+    </a>
+  </li>
+{% endblock %}
