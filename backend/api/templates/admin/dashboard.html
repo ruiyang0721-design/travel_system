@@ -20,28 +20,13 @@
     border-radius: 10px;
     padding: 24px 28px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    display: flex;
-    align-items: center;
-    gap: 20px;
+    text-align: center;
     transition: transform 0.2s;
   }
   .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   }
-  .stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    flex-shrink: 0;
-  }
-  .stat-icon.spots   { background: linear-gradient(135deg, #a8d8ea, #7ec8e3); }
-  .stat-icon.users   { background: linear-gradient(135deg, #f6c1c1, #f2a7a7); }
-  .stat-icon.diaries { background: linear-gradient(135deg, #b5e8c3, #8dd7a3); }
   .stat-num {
     font-size: 32px;
     font-weight: 700;
@@ -88,25 +73,16 @@
   <!-- 统计卡片 -->
   <div class="stat-cards">
     <div class="stat-card">
-      <div class="stat-icon spots"></div>
-      <div>
-        <div class="stat-num">{{ spot_count }}</div>
-        <div class="stat-label">景点总数</div>
-      </div>
+      <div class="stat-num">{{ spot_count }}</div>
+      <div class="stat-label">景点总数</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon users"></div>
-      <div>
-        <div class="stat-num">{{ user_count }}</div>
-        <div class="stat-label">注册用户</div>
-      </div>
+      <div class="stat-num">{{ user_count }}</div>
+      <div class="stat-label">注册用户</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon diaries"></div>
-      <div>
-        <div class="stat-num">{{ diary_count }}</div>
-        <div class="stat-label">旅行日记</div>
-      </div>
+      <div class="stat-num">{{ diary_count }}</div>
+      <div class="stat-label">旅行日记</div>
     </div>
   </div>
 
