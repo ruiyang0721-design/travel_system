@@ -124,8 +124,8 @@ SIMPLEUI_HOME_INFO = False
 SIMPLEUI_STATIC_OFFLINE = True
 # 默认主题风格
 SIMPLEUI_DEFAULT_THEME = 'simpleui.css'
-# 首页链接
-SIMPLEUI_INDEX = 'https://www.baidu.com'
+# 首页链接（留空则使用 Django 默认管理首页）
+SIMPLEUI_INDEX = ''
 # 显示快捷操作和服务器信息
 SIMPLEUI_HOME_QUICK = True
 SIMPLEUI_HOME_ACTION = True
@@ -134,6 +134,10 @@ SIMPLEUI_HOME_ACTION = True
 SIMPLEUI_CONFIG = {
     'system_keep': False,  # 不使用系统默认菜单，完全自定义
     'menus': [
+        {
+            'name': '📊 数据看板',
+            'url': '/admin/api/dashboardproxy/',
+        },
         {
             'name': '景点列表',
             'url': '/admin/api/spot/',
