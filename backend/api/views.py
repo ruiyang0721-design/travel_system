@@ -137,6 +137,101 @@ def get_city_stats(request):
 
 # ==================== 路线规划 ====================
 
+def build_recommendation_explanation(user_data, formatted_itinerary, budget, user=None, must_include_ids=None):
+    """
+    构建推荐结果解释文案
+
+    说明：
+    - 不依赖大模型，直接基于用户输入和算法输出生成稳定、可解释的说明。
+    - 前端用于展示"为什么这样推荐"，提升推荐结果可信度。
+    """
+    city = user_data.get('city', '北京')
+    days = int(user_data.get('days', 1))
+    tags = user_data.get('tags', []) or []
+    tag_text = '、'.join(tags) if tags else '综合兴趣'
+    must_include_count = len(must_include_ids or [])
+    has_hotel = bool(user_data.get('hotel'))
+
+    all_spots = []
+    daily_explanations = []
+
+    for day_name, route_nodes in formatted_itinerary.items():
+        day_spots = [
+            node for node in route_nodes
+            if not (isinstance(node, dict) and node.get('is_hotel'))
+        ]
+        all_spots.extend(day_spots)
+
+        day_cost = sum(float(spot.price) if spot.price else 0 for spot in day_spots)
+        day_duration = sum(spot.duration if spot.duration else 0 for spot in day_spots)
+        matched_tags = sorted(set(
+            tag.strip()
+            for spot in day_spots
+            for tag in spot.tags.replace('，', ',').split(',')
+            if tag.strip() and (not tags or tag.strip() in tags)
+        ))
+        high_rating_spots = [spot.name for spot in day_spots if spot.rating >= 4.8][:3]
+
+        tag_sentence = (
+            f"覆盖了{ '、'.join(matched_tags) }等偏好标签"
+            if matched_tags else
+            "兼顾了评分、游玩时长和空间位置"
+        )
+        rating_sentence = (
+            f"其中{ '、'.join(high_rating_spots) }评分较高"
+            if high_rating_spots else
+            "整体安排保持了较均衡的游玩强度"
+        )
+
+        daily_explanations.append({
+            "day": day_name,
+            "spot_count": len(day_spots),
+            "duration": round(day_duration, 1),
+            "cost": int(round(day_cost, 0)),
+            "text": (
+                f"{day_name}安排了{len(day_spots)}个景点，预计游玩{round(day_duration, 1)}小时，"
+                f"门票约{int(round(day_cost, 0))}元。系统将地理位置相近的景点聚合在同一天，"
+                f"{tag_sentence}，{rating_sentence}。"
+            )
+        })
+
+    spot_count = len(all_spots)
+    avg_rating = round(sum(spot.rating for spot in all_spots) / spot_count, 1) if spot_count else 0
+
+    reasons = [
+        f"根据你选择的{city}、{days}天和{tag_text}偏好，优先召回标签匹配度高的景点。",
+        "候选景点综合考虑标签匹配、景点评分和游玩时长，避免行程过满。",
+        "系统使用 K-means 按经纬度将景点分天，让同一天的景点尽量集中，减少跨区域奔波。",
+        "每天内部会枚举不同游览顺序，选择总距离更短的路线。"
+    ]
+
+    if user and user.is_authenticated:
+        city_favorite_count = Favorite.objects.filter(user=user, spot__city=city).count()
+        if city_favorite_count > 0:
+            reasons.insert(1, f"你在{city}已有{city_favorite_count}个收藏景点，系统会结合收藏行为进行个性化加权。")
+        else:
+            reasons.insert(1, "当前账号在该城市暂无收藏记录，本次主要依据兴趣标签和景点评分进行推荐。")
+
+    if must_include_count > 0:
+        reasons.append(f"你指定了{must_include_count}个必去收藏景点，系统已优先纳入候选行程。")
+
+    if has_hotel:
+        reasons.append("你指定了住宿位置，因此每天路线按酒店出发并返回酒店的闭环方式组织。")
+    else:
+        reasons.append("你未指定酒店，系统根据候选景点中心位置生成推荐住宿区域。")
+
+    return {
+        "summary": (
+            f"本次为你生成了{city}{days}天{tag_text}主题行程，"
+            f"共包含{spot_count}个景点，平均评分约{avg_rating}分，"
+            f"总门票约{int(round(budget.get('total_cost', 0), 0))}元，"
+            f"预计总游玩时长{budget.get('total_duration', 0)}小时。"
+        ),
+        "reasons": reasons,
+        "daily": daily_explanations,
+    }
+
+
 @api_view(['POST'])
 def recommend_spots(request):
     """
@@ -209,15 +304,25 @@ def recommend_spots(request):
                 daily_json.append(SpotSerializer(node).data)  # 景点对象需要序列化
         serialized_plan[day] = daily_json
 
+    budget = {
+        "total_cost": total_cost,
+        "total_duration": round(total_duration, 1),
+        "days": int(user_data.get('days', 1)),
+    }
+    explanation = build_recommendation_explanation(
+        user_data,
+        formatted_itinerary,
+        budget,
+        user=user,
+        must_include_ids=must_include_ids
+    )
+
     return Response({
         "status": "success",
         "city": city,
         "data": serialized_plan,
-        "budget": {
-            "total_cost": total_cost,
-            "total_duration": round(total_duration, 1),
-            "days": int(user_data.get('days', 1)),
-        }
+        "budget": budget,
+        "explanation": explanation,
     })
 
 

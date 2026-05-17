@@ -40,6 +40,43 @@
       </el-col>
     </el-row>
 
+    <!-- ================= 推荐总结与解释 ================= -->
+    <!-- 展示后端基于算法输入和规划结果生成的解释，提升推荐可信度 -->
+    <el-card v-if="!loading && itinerary && explanation" class="explanation-card" shadow="never">
+      <template #header>
+        <div class="card-header">
+          <h3>为什么这样推荐</h3>
+          <span class="sub-text">基于兴趣偏好、评分、空间聚类和路线优化生成</span>
+        </div>
+      </template>
+
+      <div class="explanation-summary">
+        {{ explanation.summary }}
+      </div>
+
+      <div class="explanation-grid">
+        <div class="explanation-block">
+          <h4>推荐依据</h4>
+          <ul class="reason-list">
+            <li v-for="(reason, index) in explanation.reasons" :key="index">
+              {{ reason }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="explanation-block">
+          <h4>每日安排说明</h4>
+          <div class="daily-explanation" v-for="item in explanation.daily" :key="item.day">
+            <div class="daily-title">
+              <strong>{{ item.day }}</strong>
+              <span>{{ item.spot_count }}个景点 · {{ item.duration }}小时 · ¥{{ item.cost }}</span>
+            </div>
+            <p>{{ item.text }}</p>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <!-- ================= 加载状态 ================= -->
     <!-- 规划中时显示 loading 动画和提示文字 -->
     <div v-if="loading" v-loading="true" style="height: 400px; display: flex; justify-content: center; align-items: center;">
@@ -178,6 +215,9 @@ import draggable from 'vuedraggable'
 const route = useRoute()
 const router = useRouter()
 
+/** 从 localStorage 获取 JWT token（用于身份认证） */
+const token = localStorage.getItem('access_token')
+
 /**
  * 行程数据（后端返回的按天分组字典）
  * 结构示例：{ "第1天": [景点A, 景点B], "第2天": [景点C] }
@@ -200,6 +240,12 @@ const mapKey = ref(0)
  * @property {number} days - 总天数
  */
 const budgetInfo = ref({ total_cost: 0, total_duration: 0, days: 1 })
+
+/**
+ * 推荐解释信息
+ * 后端根据用户输入、推荐算法和最终行程生成，用于说明推荐依据
+ */
+const explanation = ref(null)
 
 /**
  * 计算属性：排除酒店后的景点总数
@@ -255,11 +301,16 @@ const fetchPlan = async () => {
       payload.must_include = must_include.split(',').map(Number)
     }
 
-    const res = await axios.post('http://127.0.0.1:8000/api/recommend/', payload)
+    const res = await axios.post(
+      'http://127.0.0.1:8000/api/recommend/',
+      payload,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+    )
     
     // 存储行程数据和预算信息
     itinerary.value = res.data.data
     budgetInfo.value = res.data.budget || { total_cost: 0, total_duration: 0, days: parseInt(days) }
+    explanation.value = res.data.explanation || null
     
     // 默认选中第一天的 Tab
     if (itinerary.value && Object.keys(itinerary.value).length > 0) {
@@ -295,9 +346,6 @@ const removeSpot = (dayName, index) => {
 
 /** 保存按钮的加载状态 */
 const saving = ref(false)
-
-/** 从 localStorage 获取 JWT token（用于身份认证） */
-const token = localStorage.getItem('access_token')
 
 /**
  * 保存行程到后端
@@ -385,6 +433,88 @@ onMounted(fetchPlan)
 .sub-text { margin-left: 10px; color: #909399; font-size: 14px; }
 
 /* 统计信息卡片通用样式（已提取为 StatsCard 组件） */
+
+/* 推荐解释卡片 */
+.explanation-card {
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ebeef5;
+}
+
+.explanation-summary {
+  background: #f5f7fa;
+  border-left: 4px solid #409eff;
+  color: #303133;
+  line-height: 1.8;
+  padding: 14px 16px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 20px;
+}
+
+.explanation-block {
+  min-width: 0;
+}
+
+.explanation-block h4 {
+  margin: 0 0 12px;
+  color: #303133;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.reason-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.reason-list li {
+  margin-bottom: 6px;
+}
+
+.daily-explanation {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.daily-explanation:first-of-type {
+  padding-top: 0;
+}
+
+.daily-explanation:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.daily-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #303133;
+  font-size: 13px;
+}
+
+.daily-title span {
+  color: #909399;
+  flex-shrink: 0;
+}
+
+.daily-explanation p {
+  margin: 0;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.7;
+}
 
 /* 当日小结标签行 */
 .day-summary {

@@ -67,10 +67,9 @@ def cluster_spots(candidates, travel_days):
         dict: 按天分组的景点字典，如 {"第1天": [spotA, spotB], "第2天": [spotC, spotD]}
     """
     # 边界条件保护：如果候选景点比天数还少，那有几天只能排1个景点
+    
     k_clusters = min(len(candidates), travel_days)
-
     # ========== 阶段一：K-means 空间聚类 ==========
-    # 提取候选景点的坐标矩阵 [[经度1, 纬度1], [经度2, 纬度2], ...]
     coords = np.array([[spot.longitude, spot.latitude] for spot in candidates])
     
     # K-means 参数说明：

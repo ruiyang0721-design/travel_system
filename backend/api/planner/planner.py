@@ -65,7 +65,7 @@ def generate_itinerary_with_hotel(user_data, hotel_location=None, user=None, mus
         
         hotel_node = {
             'id': f"hotel_ai_rec",
-            'name': '✨ AI 推荐住宿区域 (中心点)',
+            'name': '推荐住宿区域',
             'latitude': avg_lat,
             'longitude': avg_lng,
             'is_hotel': True,

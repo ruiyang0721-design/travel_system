@@ -32,7 +32,7 @@ from .models import Spot, Favorite, TravelDiary, SpotTip, SavedPlan, DashboardPr
 
 # ==================== 站点标题配置 ====================
 # 自定义管理后台的标题和品牌信息
-admin.site.site_header = '🧳 智能旅游推荐系统 - 管理后台'
+admin.site.site_header = '智能旅游推荐系统 - 管理后台'
 admin.site.site_title = '旅游管理系统'
 admin.site.index_title = '系统管理'
 
